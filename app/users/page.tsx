@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
 import { requireAdmin } from '@/lib/admin'
 import AdminHeader from '@/components/admin-header'
+import RoleControl from '@/components/role-control'
+import Notice from '@/components/notice'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +16,11 @@ const fmt = (d?: string | null) =>
       })
     : '—'
 
-export default async function UsersPage({ searchParams }: { searchParams: { q?: string } }) {
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: { q?: string; ok?: string; error?: string }
+}) {
   const { supabase, user } = await requireAdmin()
   const q = (searchParams.q ?? '').trim()
 
@@ -31,7 +37,7 @@ export default async function UsersPage({ searchParams }: { searchParams: { q?: 
             <h1 className="text-3xl font-extrabold tracking-tight">Users</h1>
             <p className="text-slate-600">
               {rows.length} {rows.length === 1 ? 'profile' : 'profiles'}
-              {q ? ` matching “${q}”` : ''} · read-only
+              {q ? ` matching “${q}”` : ''}
             </p>
           </div>
           <form action="/users" method="get" className="flex items-center gap-2">
@@ -51,6 +57,8 @@ export default async function UsersPage({ searchParams }: { searchParams: { q?: 
             )}
           </form>
         </div>
+
+        <Notice ok={searchParams.ok} error={searchParams.error} />
 
         {error && <p className="text-red-600">Could not load users. {error.message}</p>}
 
@@ -93,13 +101,12 @@ export default async function UsersPage({ searchParams }: { searchParams: { q?: 
                     <td className="px-4 py-3 text-right">{r.photos}</td>
                     <td className="px-4 py-3 text-right font-semibold">{r.points}</td>
                     <td className="px-4 py-3">
-                      {r.is_superadmin ? (
-                        <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
-                          Superadmin
-                        </span>
-                      ) : (
-                        <span className="text-xs text-slate-500">User</span>
-                      )}
+                      <RoleControl
+                        userId={r.id}
+                        name={name || r.email}
+                        isSuperadmin={!!r.is_superadmin}
+                        isSelf={r.id === user.id}
+                      />
                     </td>
                   </tr>
                 )
